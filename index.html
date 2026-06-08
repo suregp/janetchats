@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Lattice Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Setup Screen Layer -->
+        <div id="setup-screen">
+            <h2>Lattice Profile Setup</h2>
+            
+            <div class="setup-group">
+                <label for="invite-code">Invite Code (Shared Chat ID):</label>
+                <input type="text" id="invite-code" placeholder="e.g., room-123">
+            </div>
+
+            <div class="setup-group">
+                <label for="shared-secret">Shared Secret (Password):</label>
+                <div class="input-row">
+                    <input type="text" id="shared-secret" placeholder="e.g., secret123">
+                    <button type="button" onclick="uiGenerateSecret()" class="secondary-btn">Generate</button>
+                </div>
+            </div>
+
+            <div class="setup-group">
+                <label for="username">Your Name:</label>
+                <input type="text" id="username" placeholder="e.g., User A">
+            </div>
+
+            <hr>
+            <h3>Lattice Coordinate Profile</h3>
+
+            <div class="setup-group">
+                <label for="lattice-band">Lattice Degree Band (1 - 6):</label>
+                <select id="lattice-band">
+                    <option value="1">Band 1 (Hot Tier - 0 Vouches)</option>
+                    <option value="2">Band 2 (Hot Tier - 0 Vouches)</option>
+                    <option value="3">Band 3 (Warm Tier - 1 Vouch)</option>
+                    <option value="4">Band 4 (Warm Tier - 1 Vouch)</option>
+                    <option value="5">Band 5 (Cold Tier - 2 Vouches)</option>
+                    <option value="6">Band 6 (Cold Tier - 2 Vouches)</option>
+                </select>
+            </div>
+
+            <div class="setup-group">
+                <label for="lattice-reltype">Lattice Relationship Type:</label>
+                <select id="lattice-reltype">
+                    <!-- Loaded dynamically via chat.js -->
+                </select>
+            </div>
+
+            <button onclick="startChat()">Enter Lattice Chat</button>
+        </div>
+
+        <!-- Active Chat Screen Layer -->
+        <div id="chat-screen" class="hidden">
+            <div class="chat-header-row">
+                <h3 id="room-title">Chat Room</h3>
+                <div id="token-wallet-badge">Wallet: <span id="wallet-balance">0.0000</span> Units</div>
+            </div>
+            
+            <div id="node-info-bar"></div>
+            <div id="mint-notification-log" class="hidden"></div>
+            <div id="matrix-conflict-banner" class="hidden"></div>
+            
+            <!-- Live Profile Mutation Panel -->
+            <div id="profile-mutation-box">
+                <h4>Modify Family Structure Configuration</h4>
+                <div class="mutation-row">
+                    <select id="edit-lattice-band">
+                        <option value="1">Band 1</option>
+                        <option value="2">Band 2</option>
+                        <option value="3">Band 3</option>
+                        <option value="4">Band 4</option>
+                        <option value="5">Band 5</option>
+                        <option value="6">Band 6</option>
+                    </select>
+                    <select id="edit-lattice-reltype"></select>
+                    <button onclick="mutateFamilyStructure()">Save Structure</button>
+                </div>
+            </div>
+
+            <div id="messages"></div>
+            <div id="input-area">
+                <input type="text" id="msg-input" placeholder="Type a message..." onkeydown="if(event.key === 'Enter') sendMsg()">
+                <button id="send-btn" onclick="sendMsg()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script imports (order matches architectural dependencies) -->
+    <script src="lattice.js"></script>
+    <script src="crypto.js"></script>
+    <script src="chat.js"></script>
+</body>
+</html>
