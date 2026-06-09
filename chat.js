@@ -74,6 +74,7 @@ function startChat() {
         renderNodeMetadataBar();
         refreshWalletDisplay();
         updatePresenceState();
+        initializeFamilyGraph();
 
         pollInterval = setInterval(() => {
             fetchMessages();
@@ -319,4 +320,197 @@ function displayMessage(sender, text, peerLattice) {
         msgDiv.innerText = `${sender}${systemTag}: ${text}`;
     }
     messagesDiv.appendChild(msgDiv);
+}
+
+// ============================================================================
+// FAMILY GRAPH INTEGRATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Add current user as a node to the family graph
+ */
+function addUserToGraph() {
+    if (!chatKey || !userName || !userNodeData) return;
+
+    const payload = {
+        chatKey,
+        entityId: `user-${userName}`,
+        band: userNodeData.band,
+        relType: userNodeData.relType,
+        metadata: {
+            userName,
+            nodeType: 'PERSON',
+            entryTime: Date.now()
+        }
+    };
+
+    fetch(`${API_BASE}/graph/node`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✓ User node added to graph:', data.node);
+        }
+    })
+    .catch(err => console.error('Error adding user to graph:', err));
+}
+
+/**
+ * Create an edge between two users (establish relationship)
+ */
+function createRelationshipEdge(targetUserName, relType) {
+    if (!chatKey || !userName) return;
+
+    const sourceNodeId = `node-user-${userName}-${userNodeData.band}-${userNodeData.relType}`;
+    const targetNodeId = `node-user-${targetUserName}-?-?`; // Simplified; normally would query target's lattice position
+
+    const payload = {
+        chatKey,
+        sourceNodeId,
+        targetNodeId,
+        relType,
+        metadata: {
+            established: Date.now(),
+            createdBy: userName
+        }
+    };
+
+    fetch(`${API_BASE}/graph/edge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✓ Relationship edge created:', data.edge);
+        } else {
+            console.error('Error creating edge:', data.error);
+        }
+    })
+    .catch(err => console.error('Error creating relationship:', err));
+}
+
+/**
+ * Verify triadic closure (A→B→C relationship composition)
+ */
+function verifyTriadicClosure(nodeAId, nodeBId, nodeCId) {
+    const payload = {
+        chatKey,
+        nodeAId,
+        nodeBId,
+        nodeCId
+    };
+
+    fetch(`${API_BASE}/graph/triadic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✓ Triadic link verified:', data.triad);
+        } else {
+            console.error('Error verifying triadic closure:', data.error);
+        }
+    })
+    .catch(err => console.error('Error verifying triadic closure:', err));
+}
+
+/**
+ * Query graph nodes by criteria
+ */
+function queryGraphNodes(filter = {}) {
+    const params = new URLSearchParams();
+    params.append('chatKey', chatKey);
+    if (filter.band) params.append('band', filter.band);
+    if (filter.relType) params.append('relType', filter.relType);
+    if (filter.tier) params.append('tier', filter.tier);
+    if (filter.component) params.append('component', filter.component);
+
+    fetch(`${API_BASE}/graph/query?${params}`)
+        .then(res => res.json())
+        .then(data => {
+            console.log(`✓ Found ${data.nodes.length} nodes matching filter:`, data.nodes);
+            return data.nodes;
+        })
+        .catch(err => console.error('Error querying graph:', err));
+}
+
+/**
+ * Traverse graph from current user node
+ */
+function traverseGraphFromUser(maxDepth = 3) {
+    if (!chatKey || !userName || !userNodeData) return;
+
+    const startNodeId = `node-user-${userName}-${userNodeData.band}-${userNodeData.relType}`;
+
+    fetch(`${API_BASE}/graph/traverse/${chatKey}/${encodeURIComponent(startNodeId)}?maxDepth=${maxDepth}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`✓ Graph traversal from ${userName} (depth ${maxDepth}):`, data.visited);
+                return data.visited;
+            } else {
+                console.error('Traversal error:', data.error);
+            }
+        })
+        .catch(err => console.error('Error traversing graph:', err));
+}
+
+/**
+ * Check lattice compliance
+ */
+function checkLatticeCompliance() {
+    fetch(`${API_BASE}/lattice/compliance/${chatKey}`)
+        .then(res => res.json())
+        .then(data => {
+            console.log('Lattice Compliance Report:', {
+                compliant: data.compliant,
+                issues: data.issues || []
+            });
+            
+            if (!data.compliant && data.issues.length > 0) {
+                console.warn('⚠️ Lattice compliance issues detected:', data.issues);
+            } else {
+                console.log('✓ All nodes compliant with 217-node lattice');
+            }
+        })
+        .catch(err => console.error('Error checking compliance:', err));
+}
+
+/**
+ * Get relationship composition result
+ */
+function getRelationshipComposition(relType1, relType2) {
+    const payload = { relType1, relType2 };
+
+    fetch(`${API_BASE}/taxonomy/compose`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.canCompose) {
+            console.log(`✓ Composition: ${data.relType1} ∘ ${data.relType2} = ${data.result} [${data.resultLabel}]`);
+        } else {
+            console.log(`✗ Composition undefined: ${data.relType1} ∘ ${data.relType2}`);
+        }
+        return data;
+    })
+    .catch(err => console.error('Error composing relationships:', err));
+}
+
+/**
+ * Initialize FamilyGraph on chat start
+ */
+function initializeFamilyGraph() {
+    console.log('Initializing FamilyGraph for room:', chatKey);
+    addUserToGraph();
+    checkLatticeCompliance();
 }

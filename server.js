@@ -3,15 +3,29 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 
+// Import family graph and lattice modules
+const { FamilyGraph, detectGaps, verifyTriadicClosure } = require('./family-graph');
+const { 
+  LATTICE_SIZE, BANDS, TYPES_PER_BAND, OCCUPIED_BANDS, PHASE_SHIFT, DELTA,
+  REL_TYPES, REL_TYPE_NAMES, REL_TYPE_LABELS, REL_GROUPS,
+  reciprocal, isReciprocal, recordIndex, janetN, latticeX, bandTier,
+  vouchesRequired, validateCoordinate, describeNode, allNodes
+} = require('./janet-lattice');
+const { 
+  ENTITY_TYPES, REL_PROPERTIES, getRelProperties, canCompose, 
+  composeRelationships, isCompatible, getInverse 
+} = require('./family-taxonomy');
+
 const PORT = Number.parseInt(process.env.PORT, 10) || 8080;
 const DB_FILE = path.join(__dirname, 'database.json');
+const MINT_INCREMENT = 0.9259;
 
 // Middleware
 app.use(express.json());
 app.use(express.static(__dirname));
 
 // ============================================================================
-// DATABASE UTILITIES
+// DATABASE UTILITIES & PERSISTENCE
 // ============================================================================
 
 function loadDatabase() {
@@ -35,163 +49,48 @@ function getDefaultDatabase() {
     chats: {},
     wallets: {},
     presence: {},
-    familyGraphs: {}
+    familyGraphs: {}, // { chatKey: { graphJSON } }
+    triadicLinks: {}, // { chatKey: [ triadic relationships ] }
+    latticeVerification: {} // { chatKey: compliance report }
   };
 }
 
 // ============================================================================
-// LATTICE & GAP DETECTION LOGIC (moved from browser)
+// FAMILY GRAPH MANAGEMENT (IN-MEMORY CACHE)
 // ============================================================================
 
-const LATTICE_SIZE = 217;
-const BANDS = 7;
-const TYPES_PER_BAND = 31;
-const OCCUPIED_BANDS = 6;
-const PHASE_SHIFT = 108;
-const DELTA = 25 / 27;
-const MINT_INCREMENT = 0.9259;
+const graphCache = {}; // { chatKey: FamilyGraph instance }
 
-const REL_TYPES = {
-  PARENT: 1, GRANDPARENT: 2, GREAT_GRANDPARENT: 3, GREAT_GREAT_GRANDPARENT: 4,
-  AUNT_UNCLE: 5, GREAT_AUNT_UNCLE: 6, STEP_PARENT: 7, FOSTER_PARENT: 8,
-  GUARDIAN: 9, ANCESTOR: 10,
-  CHILD: 11, GRANDCHILD: 12, GREAT_GRANDCHILD: 13, GREAT_GREAT_GRANDCHILD: 14,
-  NIECE_NEPHEW: 15, ADOPTIVE_CHILD: 16, STEP_CHILD: 17, FOSTER_CHILD: 18,
-  WARD: 19, DESCENDANT: 20,
-  SIBLING: 21, HALF_SIBLING: 22, STEP_SIBLING: 23, COUSIN: 24,
-  SECOND_COUSIN: 25, SPOUSE: 26, EX_SPOUSE: 27, DOMESTIC_PARTNER: 28,
-  COMPANION: 29, PARENT_IN_LAW: 30, SIBLING_IN_LAW: 31,
-};
-
-const REL_TYPE_NAMES = Object.fromEntries(
-  Object.entries(REL_TYPES).map(([name, id]) => [id, name])
-);
-
-const REL_TYPE_LABELS = {
-  1: 'Parent', 2: 'Grandparent', 3: 'Great-grandparent', 4: 'Great-great-grandparent',
-  5: 'Aunt / Uncle', 6: 'Great-aunt / Uncle', 7: 'Step-parent', 8: 'Foster parent',
-  9: 'Guardian', 10: 'Ancestor',
-  11: 'Child', 12: 'Grandchild', 13: 'Great-grandchild', 14: 'Great-great-grandchild',
-  15: 'Niece / Nephew', 16: 'Adoptive child', 17: 'Step-child', 18: 'Foster child',
-  19: 'Ward', 20: 'Descendant',
-  21: 'Sibling', 22: 'Half-sibling', 23: 'Step-sibling', 24: 'Cousin',
-  25: 'Second cousin', 26: 'Spouse', 27: 'Ex-spouse', 28: 'Domestic partner',
-  29: 'Companion', 30: 'Parent-in-law', 31: 'Sibling-in-law',
-};
-
-function reciprocal(k) {
-  if (k >= 1 && k <= 10) return k + 10;
-  if (k >= 11 && k <= 20) return k - 10;
-  if (k >= 21 && k <= 29) return k;
-  if (k === 30) return 31;
-  if (k === 31) return 30;
-  throw new Error(`Invalid rel_type: ${k}`);
-}
-
-function isReciprocal(inviterType, inviteeType) {
-  return reciprocal(inviterType) === inviteeType;
-}
-
-function recordIndex(band, relType) {
-  if (band < 1 || band > BANDS) throw new Error(`band out of range: ${band}`);
-  if (relType < 1 || relType > TYPES_PER_BAND) throw new Error(`rel_type out of range: ${relType}`);
-  return (band - 1) * TYPES_PER_BAND + (relType - 1);
-}
-
-function janetN(band, relType) {
-  return (recordIndex(band, relType) + PHASE_SHIFT) % LATTICE_SIZE;
-}
-
-function latticeX(band, relType) {
-  return parseFloat((-100 + janetN(band, relType) * DELTA).toFixed(10));
-}
-
-function bandTier(band) {
-  if (band <= 2) return 'hot';
-  if (band <= 4) return 'warm';
-  return 'cold';
-}
-
-function vouchesRequired(band) {
-  if (band <= 2) return 0;
-  if (band <= 4) return 1;
-  return 2;
-}
-
-function validateCoordinate(band, relType) {
-  if (band < 1 || band > OCCUPIED_BANDS)
-    return { valid: false, reason: `Band ${band} is out of occupied range (1–${OCCUPIED_BANDS})` };
-  if (relType < 1 || relType > TYPES_PER_BAND)
-    return { valid: false, reason: `rel_type ${relType} is out of range (1–31)` };
-  return { valid: true, index: recordIndex(band, relType) };
-}
-
-function describeNode(band, relType) {
-  const v = validateCoordinate(band, relType);
-  if (!v.valid) return null;
-  return {
-    band,
-    relType,
-    label: REL_TYPE_LABELS[relType],
-    name: REL_TYPE_NAMES[relType],
-    reciprocalType: reciprocal(relType),
-    reciprocalLabel: REL_TYPE_LABELS[reciprocal(relType)],
-    recordIndex: recordIndex(band, relType),
-    janetN: janetN(band, relType),
-    x: latticeX(band, relType),
-    tier: bandTier(band),
-    vouchesRequired: vouchesRequired(band),
-    group: relType <= 10 ? 'ANCESTRY' : relType <= 20 ? 'DESCENT' : 'LATERAL',
-    component: relType <= 10 ? 'A' : relType <= 20 ? 'B' : 'C',
-  };
-}
-
-// ============================================================================
-// GAP DETECTION LOGIC
-// ============================================================================
-
-function detectGaps(chatKey, userNodeData, presenceTable) {
-  const gaps = [];
-  const now = Date.now();
-  const activePeers = Object.entries(presenceTable).filter(([name, data]) => {
-    return name !== userNodeData.userName && (now - data.timestamp < 5000);
-  });
-
-  activePeers.forEach(([peerName, peerData]) => {
-    if (!isReciprocal(userNodeData.relType, peerData.relType)) {
-      gaps.push({
-        peer: peerName,
-        userLabel: userNodeData.label,
-        peerLabel: peerData.label,
-        expectedReciprocal: userNodeData.reciprocalLabel,
-        severity: 'conflict'
-      });
+function getGraph(chatKey) {
+  if (!graphCache[chatKey]) {
+    const db = loadDatabase();
+    if (db.familyGraphs[chatKey]) {
+      graphCache[chatKey] = FamilyGraph.fromJSON(db.familyGraphs[chatKey]);
+    } else {
+      graphCache[chatKey] = new FamilyGraph();
     }
-  });
+  }
+  return graphCache[chatKey];
+}
 
-  return gaps;
+function saveGraph(chatKey) {
+  const db = loadDatabase();
+  const graph = graphCache[chatKey];
+  if (graph) {
+    db.familyGraphs[chatKey] = graph.toJSON();
+    saveDatabase(db);
+  }
 }
 
 // ============================================================================
-// API ENDPOINTS
+// API ENDPOINTS: CHAT & PRESENCE
 // ============================================================================
-
-// GET: Serve lattice.js and crypto.js for browser (ensures frontend has all definitions)
-app.get('/api/lattice-config', (req, res) => {
-  res.json({
-    REL_TYPE_LABELS,
-    REL_TYPE_NAMES,
-    BANDS,
-    TYPES_PER_BAND,
-    OCCUPIED_BANDS
-  });
-});
 
 // POST: Start a chat session
 app.post('/api/chat/start', (req, res) => {
   const { chatKey, userName, band, relType } = req.body;
 
-  if (!chatKey || !userName || !band || !relType) {
+  if (!chatKey || !userName || band === undefined || relType === undefined) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -201,24 +100,31 @@ app.post('/api/chat/start', (req, res) => {
   }
 
   const db = loadDatabase();
-  if (!db.chats[chatKey]) {
-    db.chats[chatKey] = [];
-  }
   if (!db.presence[chatKey]) {
     db.presence[chatKey] = {};
   }
-  if (!db.wallets[`${chatKey}_${userName}`]) {
-    db.wallets[`${chatKey}_${userName}`] = 0.0;
-  }
 
   db.presence[chatKey][userName] = {
+    band,
     relType,
     label: userNodeData.label,
-    band,
     timestamp: Date.now()
   };
 
   saveDatabase(db);
+
+  // Add user node to family graph
+  const graph = getGraph(chatKey);
+  try {
+    graph.createNode(`user-${userName}`, band, relType, {
+      userName,
+      nodeType: ENTITY_TYPES.PERSON,
+      timestamp: Date.now()
+    });
+    saveGraph(chatKey);
+  } catch (e) {
+    console.error('Error adding user to graph:', e.message);
+  }
 
   res.json({
     success: true,
@@ -310,6 +216,118 @@ app.post('/api/presence/leave', (req, res) => {
   res.json({ success: true });
 });
 
+// ============================================================================
+// API ENDPOINTS: FAMILY GRAPH & LATTICE
+// ============================================================================
+
+// POST: Create a node in the family graph
+app.post('/api/graph/node', (req, res) => {
+  const { chatKey, entityId, band, relType, metadata } = req.body;
+
+  if (!chatKey || !entityId || band === undefined || relType === undefined) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const graph = getGraph(chatKey);
+  try {
+    const node = graph.createNode(entityId, band, relType, metadata || {});
+    saveGraph(chatKey);
+    res.json({ success: true, node });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// POST: Create an edge (relationship) in the family graph
+app.post('/api/graph/edge', (req, res) => {
+  const { chatKey, sourceNodeId, targetNodeId, relType, metadata } = req.body;
+
+  if (!chatKey || !sourceNodeId || !targetNodeId || !relType) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const graph = getGraph(chatKey);
+  try {
+    const edge = graph.createEdge(sourceNodeId, targetNodeId, relType, metadata || {});
+    saveGraph(chatKey);
+    res.json({ success: true, edge });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// POST: Create a triadic link (closure)
+app.post('/api/graph/triadic', (req, res) => {
+  const { chatKey, nodeAId, nodeBId, nodeCId } = req.body;
+
+  if (!chatKey || !nodeAId || !nodeBId || !nodeCId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const graph = getGraph(chatKey);
+  try {
+    const triad = graph.createTriadicLink(nodeAId, nodeBId, nodeCId);
+    saveGraph(chatKey);
+    res.json({ success: true, triad });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// GET: Query nodes in the family graph
+app.get('/api/graph/query', (req, res) => {
+  const { chatKey, band, relType, tier, component } = req.query;
+
+  if (!chatKey) {
+    return res.status(400).json({ error: 'Missing chatKey' });
+  }
+
+  const graph = getGraph(chatKey);
+  const filter = {};
+  if (band) filter.band = parseInt(band);
+  if (relType) filter.relType = parseInt(relType);
+  if (tier) filter.tier = tier;
+  if (component) filter.component = component;
+
+  const nodes = graph.queryNodes(filter);
+  res.json({ nodes });
+});
+
+// GET: Traverse the family graph from a starting node
+app.get('/api/graph/traverse/:chatKey/:nodeId', (req, res) => {
+  const { chatKey, nodeId } = req.params;
+  const { maxDepth } = req.query;
+
+  const graph = getGraph(chatKey);
+  try {
+    const visited = graph.traverse(nodeId, maxDepth ? parseInt(maxDepth) : 3);
+    res.json({ success: true, visited });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// GET: Find paths between two nodes
+app.get('/api/graph/paths/:chatKey/:sourceId/:targetId', (req, res) => {
+  const { chatKey, sourceId, targetId } = req.params;
+  const { maxPathLength } = req.query;
+
+  const graph = getGraph(chatKey);
+  try {
+    const paths = graph.findPaths(sourceId, targetId, maxPathLength ? parseInt(maxPathLength) : 5);
+    res.json({ success: true, paths });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// GET: Verify lattice compliance
+app.get('/api/lattice/compliance/:chatKey', (req, res) => {
+  const graph = getGraph(req.params.chatKey);
+  const report = graph.verifyLatticeCompliance();
+  res.json({ ...report });
+});
+
 // POST: Detect gaps in family structure
 app.post('/api/gap-detection', (req, res) => {
   const { chatKey, userNodeData } = req.body;
@@ -329,6 +347,10 @@ app.post('/api/gap-detection', (req, res) => {
     activeCount: Object.keys(presenceTable).filter(name => name !== userNodeData.userName).length
   });
 });
+
+// ============================================================================
+// API ENDPOINTS: WALLET & TOKENS
+// ============================================================================
 
 // POST: Execute token mint
 app.post('/api/wallet/mint', (req, res) => {
@@ -368,6 +390,38 @@ app.get('/api/wallet/:chatKey/:userName', (req, res) => {
   res.json({ balance });
 });
 
+// ============================================================================
+// API ENDPOINTS: LATTICE OPERATIONS
+// ============================================================================
+
+// GET: Get all lattice nodes
+app.get('/api/lattice/nodes', (req, res) => {
+  const nodes = allNodes();
+  res.json({ count: nodes.length, nodes });
+});
+
+// GET: Get a specific lattice node
+app.get('/api/lattice/node/:band/:relType', (req, res) => {
+  const { band, relType } = req.params;
+  const node = describeNode(parseInt(band), parseInt(relType));
+  if (!node) {
+    return res.status(400).json({ error: 'Invalid lattice coordinate' });
+  }
+  res.json(node);
+});
+
+// GET: Get lattice properties
+app.get('/api/lattice/properties', (req, res) => {
+  res.json({
+    latticeSize: LATTICE_SIZE,
+    bands: BANDS,
+    occupiedBands: OCCUPIED_BANDS,
+    typesPerBand: TYPES_PER_BAND,
+    relTypes: REL_TYPES,
+    relGroups: REL_GROUPS
+  });
+});
+
 // POST: Update lattice node (structure mutation)
 app.post('/api/lattice/mutate', (req, res) => {
   const { chatKey, userName, newBand, newRelType } = req.body;
@@ -401,9 +455,79 @@ app.post('/api/lattice/mutate', (req, res) => {
   });
 });
 
-// Health check
+// ============================================================================
+// API ENDPOINTS: RELATIONSHIP COMPOSITION & TAXONOMY
+// ============================================================================
+
+// GET: Get relationship properties
+app.get('/api/taxonomy/rel-properties/:relType', (req, res) => {
+  const { relType } = req.params;
+  const props = getRelProperties(parseInt(relType));
+  if (!props) {
+    return res.status(404).json({ error: 'Relationship type not found' });
+  }
+  res.json(props);
+});
+
+// POST: Compose two relationships
+app.post('/api/taxonomy/compose', (req, res) => {
+  const { relType1, relType2 } = req.body;
+
+  if (relType1 === undefined || relType2 === undefined) {
+    return res.status(400).json({ error: 'Missing relType fields' });
+  }
+
+  if (!canCompose(relType1, relType2)) {
+    return res.json({ canCompose: false, result: null });
+  }
+
+  const result = composeRelationships(relType1, relType2);
+  res.json({
+    canCompose: true,
+    relType1,
+    relType2,
+    result,
+    resultLabel: result ? REL_TYPE_LABELS[result] : 'undefined'
+  });
+});
+
+// GET: Get relationship inverse
+app.get('/api/taxonomy/inverse/:relType', (req, res) => {
+  const { relType } = req.params;
+  const inverse = getInverse(parseInt(relType));
+  if (inverse === null) {
+    return res.status(404).json({ error: 'No inverse found' });
+  }
+  res.json({
+    relType: parseInt(relType),
+    label: REL_TYPE_LABELS[parseInt(relType)],
+    inverse,
+    inverseLabel: REL_TYPE_LABELS[inverse]
+  });
+});
+
+// ============================================================================
+// API ENDPOINTS: HEALTH & INFO
+// ============================================================================
+
+// GET: Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+// GET: System info
+app.get('/api/info', (req, res) => {
+  const db = loadDatabase();
+  res.json({
+    chatRooms: Object.keys(db.chats).length,
+    activeUsers: Object.keys(db.presence).reduce((sum, key) => sum + Object.keys(db.presence[key]).length, 0),
+    totalMessages: Object.values(db.chats).reduce((sum, msgs) => sum + msgs.length, 0),
+    latticeCompliance: {
+      latticeSize: LATTICE_SIZE,
+      occupiedBands: OCCUPIED_BANDS,
+      occupiedSlots: OCCUPIED_BANDS * TYPES_PER_BAND
+    }
+  });
 });
 
 // ============================================================================
@@ -413,4 +537,6 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 JANET Chat Server running on http://localhost:${PORT}`);
   console.log(`📁 Database: ${DB_FILE}`);
+  console.log(`📊 Lattice: ${LATTICE_SIZE}-node (${OCCUPIED_BANDS} bands × ${TYPES_PER_BAND} types)`);
+  console.log(`📚 API Docs: http://localhost:${PORT}/api/info`);
 });
