@@ -9,6 +9,8 @@ let isMatrixLocked = false;
 const MINT_INCREMENT = 0.9259;
 let activeConflictDetected = false;
 
+const API_BASE = 'http://localhost:3000/api';
+
 document.addEventListener("DOMContentLoaded", () => {
     const relSelect = document.getElementById('lattice-reltype');
     const editRelSelect = document.getElementById('edit-lattice-reltype');
@@ -42,51 +44,81 @@ function startChat() {
         return;
     }
 
-    userNodeData = describeNode(selectedBand, selectedRelType);
-    if (!userNodeData) {
-        alert("Invalid Lattice Coordinate configuration selected.");
-        return;
-    }
+    // Call backend to start chat session
+    fetch(`${API_BASE}/chat/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chatKey,
+            userName,
+            band: selectedBand,
+            relType: selectedRelType
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert(`Error: ${data.error}`);
+            return;
+        }
 
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('chat-screen').classList.remove('hidden');
-    document.getElementById('room-title').innerText = `Room: ${chatKey} as ${userName}`;
+        userNodeData = data.userNodeData;
+        
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('chat-screen').classList.remove('hidden');
+        document.getElementById('room-title').innerText = `Room: ${chatKey} as ${userName}`;
 
-    document.getElementById('edit-lattice-band').value = userNodeData.band;
-    document.getElementById('edit-lattice-reltype').value = userNodeData.relType;
+        document.getElementById('edit-lattice-band').value = userNodeData.band;
+        document.getElementById('edit-lattice-reltype').value = userNodeData.relType;
 
-    renderNodeMetadataBar();
-    refreshWalletDisplay();
-    updatePresenceState();
+        renderNodeMetadataBar();
+        refreshWalletDisplay();
+        updatePresenceState();
 
-    pollInterval = setInterval(() => {
-        fetchMessages();
-        verifyMatrixReciprocity();
-        updatePresenceState(); 
-    }, 500);
+        pollInterval = setInterval(() => {
+            fetchMessages();
+            verifyMatrixReciprocity();
+            updatePresenceState(); 
+        }, 500);
 
-    window.addEventListener('beforeunload', leaveRoom);
+        window.addEventListener('beforeunload', leaveRoom);
+    })
+    .catch(err => {
+        console.error('Error starting chat:', err);
+        alert('Failed to connect to server. Is it running on port 3000?');
+    });
 }
 
 function executeTokenMint(reasonMessage) {
-    const walletKey = `chat_${chatKey}_wallet_${userName}`;
-    let balance = parseFloat(localStorage.getItem(walletKey)) || 0.0;
-    balance = parseFloat((balance + MINT_INCREMENT).toFixed(4));
-    localStorage.setItem(walletKey, balance.toString());
-    
-    refreshWalletDisplay();
-
-    const mintLog = document.getElementById('mint-notification-log');
-    mintLog.innerHTML = `💎 <strong>MINT OPERATION SUCCESSFUL:</strong> +${MINT_INCREMENT} Units generated.<br><small>${reasonMessage}</small>`;
-    mintLog.classList.remove('hidden');
-    
-    setTimeout(() => { mintLog.classList.add('hidden'); }, 6000);
+    fetch(`${API_BASE}/wallet/mint`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chatKey,
+            userName,
+            reasonMessage
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.error) {
+            refreshWalletDisplay();
+            const mintLog = document.getElementById('mint-notification-log');
+            mintLog.innerHTML = `💎 <strong>MINT OPERATION SUCCESSFUL:</strong> +${MINT_INCREMENT} Units generated.<br><small>${reasonMessage}</small>`;
+            mintLog.classList.remove('hidden');
+            setTimeout(() => { mintLog.classList.add('hidden'); }, 6000);
+        }
+    })
+    .catch(err => console.error('Error minting token:', err));
 }
 
 function refreshWalletDisplay() {
-    const walletKey = `chat_${chatKey}_wallet_${userName}`;
-    const balance = parseFloat(localStorage.getItem(walletKey)) || 0.0;
-    document.getElementById('wallet-balance').innerText = balance.toFixed(4);
+    fetch(`${API_BASE}/wallet/${chatKey}/${userName}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('wallet-balance').innerText = data.balance.toFixed(4);
+        })
+        .catch(err => console.error('Error fetching wallet:', err));
 }
 
 function mutateFamilyStructure() {
@@ -103,6 +135,19 @@ function mutateFamilyStructure() {
 
     const previousLabel = userNodeData.label;
     userNodeData = updatedNode;
+
+    // Persist mutation to backend
+    fetch(`${API_BASE}/lattice/mutate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chatKey,
+            userName,
+            newBand: nextBand,
+            newRelType: nextRel
+        })
+    })
+    .catch(err => console.error('Error mutating lattice:', err));
 
     renderNodeMetadataBar();
     updatePresenceState();
@@ -121,79 +166,84 @@ function renderNodeMetadataBar() {
 
 function updatePresenceState() {
     if (!chatKey || !userName || !userNodeData) return;
-    const presenceKey = `chat_${chatKey}_presence`;
-    let presenceTable = JSON.parse(localStorage.getItem(presenceKey)) || {};
     
-    presenceTable[userName] = {
-        relType: userNodeData.relType,
-        label: userNodeData.label,
-        timestamp: Date.now()
-    };
-    localStorage.setItem(presenceKey, JSON.stringify(presenceTable));
+    fetch(`${API_BASE}/presence/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chatKey,
+            userName,
+            relType: userNodeData.relType,
+            label: userNodeData.label,
+            band: userNodeData.band
+        })
+    })
+    .catch(err => console.error('Error updating presence:', err));
 }
 
 function leaveRoom() {
-    const presenceKey = `chat_${chatKey}_presence`;
-    let presenceTable = JSON.parse(localStorage.getItem(presenceKey)) || {};
-    delete presenceTable[userName];
-    localStorage.setItem(presenceKey, JSON.stringify(presenceTable));
+    fetch(`${API_BASE}/presence/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatKey, userName })
+    })
+    .catch(err => console.error('Error leaving room:', err));
 }
 
 function verifyMatrixReciprocity() {
-    const presenceKey = `chat_${chatKey}_presence`;
-    const presenceTable = JSON.parse(localStorage.getItem(presenceKey)) || {};
-    const conflictBanner = document.getElementById('matrix-conflict-banner');
-    const msgInput = document.getElementById('msg-input');
-    const sendBtn = document.getElementById('send-btn');
-    
-    const now = Date.now();
-    const activePeers = Object.entries(presenceTable).filter(([name, data]) => {
-        return name !== userName && (now - data.timestamp < 5000);
-    });
+    if (!chatKey || !userNodeData) return;
 
-    if (activePeers.length === 0) {
-        conflictBanner.classList.add('hidden');
-        if (isMatrixLocked) {
-            isMatrixLocked = false;
-            msgInput.disabled = false;
-            sendBtn.disabled = false;
-            msgInput.placeholder = "Type a message...";
-            activeConflictDetected = false;
+    fetch(`${API_BASE}/gap-detection`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chatKey,
+            userNodeData: {
+                ...userNodeData,
+                userName
+            }
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const conflictBanner = document.getElementById('matrix-conflict-banner');
+        const msgInput = document.getElementById('msg-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        if (!data.hasGaps) {
+            conflictBanner.classList.add('hidden');
+            if (isMatrixLocked) {
+                isMatrixLocked = false;
+                msgInput.disabled = false;
+                sendBtn.disabled = false;
+                msgInput.placeholder = "Type a message...";
+                activeConflictDetected = false;
+            }
+            return;
         }
-        return;
-    }
 
-    let dynamicConflicts = [];
-    activePeers.forEach(([peerName, peerData]) => {
-        if (!isReciprocal(userNodeData.relType, peerData.relType)) {
+        let dynamicConflicts = [];
+        data.gaps.forEach(gap => {
             dynamicConflicts.push(
-                `Lattice Conflict with <strong>${peerName}</strong>! You: [${userNodeData.label}], Peer: [${peerData.label}]. broken ℛ reciprocity rule! Expected match: [${userNodeData.reciprocalLabel}].`
+                `Lattice Conflict with <strong>${gap.peer}</strong>! You: [${gap.userLabel}], Peer: [${gap.peerLabel}]. Broken ℛ reciprocity rule! Expected match: [${gap.expectedReciprocal}].`
             );
-        }
-    });
+        });
 
-    if (dynamicConflicts.length > 0) {
-        isMatrixLocked = true;
-        conflictBanner.innerHTML = dynamicConflicts.join('<br><br>');
-        conflictBanner.classList.remove('hidden');
-        msgInput.disabled = true;
-        sendBtn.disabled = true;
-        msgInput.placeholder = "Chat locked until conflict is resolved...";
+        if (dynamicConflicts.length > 0) {
+            isMatrixLocked = true;
+            conflictBanner.innerHTML = dynamicConflicts.join('<br><br>');
+            conflictBanner.classList.remove('hidden');
+            msgInput.disabled = true;
+            sendBtn.disabled = true;
+            msgInput.placeholder = "Chat locked until conflict is resolved...";
 
-        if (!activeConflictDetected) {
-            activeConflictDetected = true;
-            executeTokenMint("Structural reciprocity violation incurred between active network nodes.");
+            if (!activeConflictDetected) {
+                activeConflictDetected = true;
+                executeTokenMint("Structural reciprocity violation incurred between active network nodes.");
+            }
         }
-    } else {
-        isMatrixLocked = false;
-        conflictBanner.classList.add('hidden');
-        msgInput.disabled = false;
-        sendBtn.disabled = false;
-        activeConflictDetected = false;
-        if (msgInput.placeholder === "Chat locked until conflict is resolved...") {
-            msgInput.placeholder = "Type a message...";
-        }
-    }
+    })
+    .catch(err => console.error('Error verifying matrix reciprocity:', err));
 }
 
 function sendMsg() {
@@ -205,44 +255,53 @@ function sendMsg() {
     const fullMessage = `${userName}: ${msgText}`;
     const encryptedMessage = encryptDecrypt(fullMessage, secretKey);
     
-    const messageObj = {
-        sender: userName,
-        text: encryptedMessage,
-        timestamp: Date.now(),
-        lattice: { band: userNodeData.band, relType: userNodeData.relType }
-    };
-
-    const storageKey = `chat_${chatKey}`;
-    let chatLog = JSON.parse(localStorage.getItem(storageKey)) || [];
-    chatLog.push(messageObj);
-    localStorage.setItem(storageKey, JSON.stringify(chatLog));
-
-    input.value = '';
-    fetchMessages();
+    fetch(`${API_BASE}/chat/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chatKey,
+            sender: userName,
+            encryptedText: encryptedMessage,
+            band: userNodeData.band,
+            relType: userNodeData.relType
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.error) {
+            input.value = '';
+            fetchMessages();
+        }
+    })
+    .catch(err => console.error('Error sending message:', err));
 }
 
 function fetchMessages() {
-    const storageKey = `chat_${chatKey}`;
-    const chatLog = JSON.parse(localStorage.getItem(storageKey)) || [];
-    const messagesDiv = document.getElementById('messages');
-    
-    if (messagesDiv.innerHTML === "") lastMessageTimestamp = 0;
-    let hasNew = false;
+    fetch(`${API_BASE}/chat/messages/${chatKey}`)
+        .then(res => res.json())
+        .then(data => {
+            const messagesDiv = document.getElementById('messages');
+            const chatLog = data.messages || [];
+            
+            if (messagesDiv.innerHTML === "") lastMessageTimestamp = 0;
+            let hasNew = false;
 
-    chatLog.forEach(msg => {
-        if (msg.timestamp > lastMessageTimestamp) {
-            hasNew = true;
-            try {
-                const decrypted = encryptDecrypt(msg.text, secretKey);
-                if (decrypted.startsWith(msg.sender)) {
-                    const cleanText = decrypted.substring(msg.sender.length + 2);
-                    displayMessage(msg.sender, cleanText, msg.lattice);
+            chatLog.forEach(msg => {
+                if (msg.timestamp > lastMessageTimestamp) {
+                    hasNew = true;
+                    try {
+                        const decrypted = encryptDecrypt(msg.text, secretKey);
+                        if (decrypted.startsWith(msg.sender)) {
+                            const cleanText = decrypted.substring(msg.sender.length + 2);
+                            displayMessage(msg.sender, cleanText, msg.lattice);
+                        }
+                    } catch (e) { console.error(e); }
+                    lastMessageTimestamp = msg.timestamp;
                 }
-            } catch (e) { console.error(e); }
-            lastMessageTimestamp = msg.timestamp;
-        }
-    });
-    if (hasNew) { messagesDiv.scrollTop = messagesDiv.scrollHeight; }
+            });
+            if (hasNew) { messagesDiv.scrollTop = messagesDiv.scrollHeight; }
+        })
+        .catch(err => console.error('Error fetching messages:', err));
 }
 
 function displayMessage(sender, text, peerLattice) {
