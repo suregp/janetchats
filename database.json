@@ -1,0 +1,69 @@
+{
+  "chats": {
+    "Yam": [
+      {
+        "sender": "gee",
+        "text": "\u00010\u0002\f\u0015Z\u000b",
+        "timestamp": 1781026085182,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "ENO",
+        "text": "#\u001b(\f\u0015Y\r8\u001b",
+        "timestamp": 1781026089997,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      },
+      {
+        "sender": "nickytek",
+        "text": "&Q\u0001\u0001?\u0002<\u001a\u0002y\u0001/",
+        "timestamp": 1781026888547,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      }
+    ]
+  },
+  "wallets": {
+    "Yam_ENO": 1.8518,
+    "Yam_gee": 0.9259,
+    "Yam_nickytek": 4.6295
+  },
+  "presence": {
+    "Yam": {
+      "ENO": {
+        "relType": 1,
+        "label": "Parent",
+        "band": 1,
+        "timestamp": 1781027235736
+      },
+      "gee": {
+        "relType": 11,
+        "label": "Child",
+        "band": 1,
+        "timestamp": 1781027235713
+      },
+      "nickytek": {
+        "relType": 2,
+        "label": "Grandparent",
+        "band": 1,
+        "timestamp": 1781026906628
+      }
+    }
+  },
+  "familyGraphs": {
+    "Yam": {
+      "nickytek": {
+        "band": 1,
+        "relType": 2,
+        "mutatedAt": 1781026895965
+      }
+    }
+  }
+}
