@@ -11,7 +11,7 @@ A decentralized chat application based on the 217-node lattice framework with se
 - No persistent storage between sessions
 
 ### After (Node.js Backend)
-- **Node.js/Express Server** (`server.js`) running on port 3000
+- **Node.js/Express Server** (`server.js`) running on port 8080 by default
 - **Persistent File Storage** (`database.json`) for:
   - Chat messages
   - Wallet balances
@@ -54,10 +54,10 @@ janetchats/
    npm start
    ```
    
-   Server will run on `http://localhost:3000`
+   Server will run on `http://localhost:8080` by default or use `PORT=XXXX npm start` to override.
 
 3. **Access the App**
-   - Open browser to `http://localhost:3000`
+   - Open browser to `http://localhost:8080`
    - Fill in chat credentials and lattice coordinates
    - Start chatting!
 
@@ -137,7 +137,7 @@ fetch(`${API_BASE}/wallet/mint`, {
 
 ### Added in chat.js
 ```javascript
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = '/api';
 ```
 
 ## 🌐 Server Logic Moved
@@ -156,7 +156,7 @@ const API_BASE = 'http://localhost:3000/api';
 
 ## ✅ Testing
 
-1. Open two browser windows to `http://localhost:3000`
+1. Open two browser windows to `http://localhost:8080`
 2. Use the same invite code and shared secret
 3. Choose lattice coordinates that satisfy reciprocity (e.g., Parent & Child)
 4. Send messages - they should appear encrypted in both windows

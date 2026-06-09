@@ -16,10 +16,12 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-echo "✅ Starting server on port 3000..."
-echo "📍 Open browser to: http://localhost:3000"
+PORT="${PORT:-8080}"
+
+echo "✅ Starting server on port ${PORT}..."
+echo "📍 Open browser to: http://localhost:${PORT}"
 echo ""
 echo "To stop the server, press Ctrl+C"
 echo ""
 
-npm start
+PORT="$PORT" npm start

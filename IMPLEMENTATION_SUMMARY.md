@@ -4,7 +4,7 @@
 
 ### 1. Created Node.js/Express Server (`server.js`)
 - **Single-file backend** with all critical logic
-- **Port 3000** default (configurable via PORT variable)
+- **Port 8080** default (configurable via PORT variable)
 - **12 API endpoints** for all chat operations
 - Clean middleware setup and error handling
 - Full lattice calculation functions duplicated server-side for validation
@@ -132,7 +132,7 @@ chmod +x start.sh
 node server.js
 ```
 
-Then open: **http://localhost:3000**
+Then open: **http://localhost:8080** (or whichever `PORT` is configured)
 
 ## 📝 Key Features
 
@@ -167,5 +167,5 @@ Then open: **http://localhost:3000**
 ---
 
 **Status**: ✅ Complete and tested
-**Server**: Running on http://localhost:3000
+**Server**: Running on http://localhost:8080 by default
 **Database**: /workspaces/janetchats/database.json

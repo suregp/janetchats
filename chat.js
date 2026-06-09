@@ -9,7 +9,7 @@ let isMatrixLocked = false;
 const MINT_INCREMENT = 0.9259;
 let activeConflictDetected = false;
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = '/api';
 
 document.addEventListener("DOMContentLoaded", () => {
     const relSelect = document.getElementById('lattice-reltype');
@@ -85,7 +85,7 @@ function startChat() {
     })
     .catch(err => {
         console.error('Error starting chat:', err);
-        alert('Failed to connect to server. Is it running on port 3000?');
+        alert('Failed to connect to server. Is it running on the configured port.');
     });
 }
 
