@@ -1,4 +1,4 @@
-import { REL_TYPE_LABELS } from './lattice.js';
+import { REL_TYPE_LABELS, describeNode } from './lattice.js';
 
 let chatKey = "";
 let secretKey = "";
