@@ -329,8 +329,10 @@ export function detectGaps(chatKey, userNodeData, presenceTable) {
     if (peerData.relType === expectedReciprocal) return;
     gaps.push({
       peer: peerName,
+      peerLabel: peerData.label || null,
       peerRelType: peerData.relType,
       expectedReciprocal,
+      userLabel: userNodeData.label || null,
       message: `Peer ${peerName} has relType ${peerData.relType}, expected ${expectedReciprocal}`,
     });
   });

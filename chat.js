@@ -78,6 +78,10 @@ function startChat() {
         updatePresenceState();
         initializeFamilyGraph();
 
+        // Run an immediate check so the UI reflects gap detection and halted state without waiting for the first tick.
+        fetchMessages();
+        verifyMatrixReciprocity();
+
         pollInterval = setInterval(() => {
             fetchMessages();
             verifyMatrixReciprocity();
