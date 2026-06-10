@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "bash ./scripts/test-gap.sh"
   },
   "keywords": ["chat", "janet", "family-graph"],
   "author": "",

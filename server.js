@@ -146,6 +146,11 @@ app.post('/api/chat/message', (req, res) => {
   }
 
   const db = loadDatabase();
+  // Prevent sending messages if lattice verification has halted this chat
+  if (db.latticeVerification && db.latticeVerification[chatKey] && db.latticeVerification[chatKey].halted) {
+    return res.status(423).json({ error: 'chat_halted_due_to_structure_violation', halted: true, reason: db.latticeVerification[chatKey].reason });
+  }
+
   if (!db.chats[chatKey]) {
     db.chats[chatKey] = [];
   }
@@ -345,11 +350,36 @@ app.post('/api/gap-detection', (req, res) => {
 
   const gaps = detectGaps(chatKey, userNodeData, presenceTable);
 
-  res.json({
+  const result = {
     hasGaps: gaps.length > 0,
     gaps,
     activeCount: Object.keys(presenceTable).filter(name => name !== userNodeData.userName).length
-  });
+  };
+
+  if (gaps.length > 0) {
+    // Perform authoritative token mint to the reporting user as an event log
+    const walletKey = `${chatKey}_${userNodeData.userName}`;
+    if (!db.wallets[walletKey]) db.wallets[walletKey] = 0.0;
+    const newBalance = parseFloat((db.wallets[walletKey] + MINT_INCREMENT).toFixed(4));
+    db.wallets[walletKey] = newBalance;
+
+    // Mark the chat as halted due to structural violation
+    if (!db.latticeVerification) db.latticeVerification = {};
+    db.latticeVerification[chatKey] = {
+      halted: true,
+      reason: 'structural_reciprocity_violation',
+      gaps,
+      haltedAt: Date.now(),
+      lastMint: { userName: userNodeData.userName, amount: MINT_INCREMENT, newBalance }
+    };
+
+    saveDatabase(db);
+
+    result.halted = true;
+    result.minted = { amount: MINT_INCREMENT, newBalance };
+  }
+
+  res.json(result);
 });
 
 // ============================================================================
@@ -533,6 +563,87 @@ app.get('/api/info', (req, res) => {
     }
   });
 });
+
+// ============================================================================
+// ADAPTIVE TRAINING (Lightweight continuous model built from database.json)
+// ============================================================================
+
+function runAdaptiveTraining() {
+  try {
+    const db = loadDatabase();
+    const relationCounts = {};
+    const bandCounts = {};
+    let totalMessages = 0;
+
+    // Count relationships from familyGraphs
+    if (db.familyGraphs) {
+      for (const roomKey of Object.keys(db.familyGraphs)) {
+        const room = db.familyGraphs[roomKey] || {};
+        for (const userName of Object.keys(room)) {
+          const entry = room[userName];
+          if (entry && Number.isInteger(entry.relType)) {
+            relationCounts[entry.relType] = (relationCounts[entry.relType] || 0) + 1;
+          }
+          if (entry && Number.isInteger(entry.band)) {
+            bandCounts[entry.band] = (bandCounts[entry.band] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    // Count lattice labels used in chat messages
+    if (db.chats) {
+      for (const roomKey of Object.keys(db.chats)) {
+        const msgs = db.chats[roomKey] || [];
+        totalMessages += msgs.length;
+        for (const m of msgs) {
+          if (m.lattice && Number.isInteger(m.lattice.relType)) {
+            relationCounts[m.lattice.relType] = (relationCounts[m.lattice.relType] || 0) + 1;
+          }
+          if (m.lattice && Number.isInteger(m.lattice.band)) {
+            bandCounts[m.lattice.band] = (bandCounts[m.lattice.band] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    const model = {
+      updatedAt: Date.now(),
+      relationCounts,
+      bandCounts,
+      totalMessages
+    };
+
+    const db2 = loadDatabase();
+    db2.adaptiveModel = db2.adaptiveModel || {};
+    db2.adaptiveModel.global = model;
+    saveDatabase(db2);
+    return model;
+  } catch (e) {
+    console.error('Adaptive training failed:', e);
+    return null;
+  }
+}
+
+// POST: Trigger training immediately
+app.post('/api/training/trigger', (req, res) => {
+  const model = runAdaptiveTraining();
+  if (!model) return res.status(500).json({ error: 'training_failed' });
+  res.json({ success: true, model });
+});
+
+// GET: Get latest training model/status
+app.get('/api/training/status', (req, res) => {
+  const db = loadDatabase();
+  res.json({ model: (db.adaptiveModel && db.adaptiveModel.global) || null });
+});
+
+// Kick off background adaptive training every 60s
+setInterval(() => {
+  const m = runAdaptiveTraining();
+  if (m) console.log('Adaptive training updated at', new Date(m.updatedAt).toISOString());
+}, 60 * 1000);
+
 
 // ============================================================================
 // START SERVER

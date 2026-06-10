@@ -242,7 +242,12 @@ function verifyMatrixReciprocity() {
 
             if (!activeConflictDetected) {
                 activeConflictDetected = true;
-                executeTokenMint("Structural reciprocity violation incurred between active network nodes.");
+                // If server already performed the authoritative mint, just refresh the wallet.
+                if (data.minted && data.minted.newBalance !== undefined) {
+                    refreshWalletDisplay();
+                } else {
+                    executeTokenMint("Structural reciprocity violation incurred between active network nodes.");
+                }
             }
         }
     })
