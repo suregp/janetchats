@@ -16,10 +16,11 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
+HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8080}"
 
-echo "✅ Starting server on port ${PORT}..."
-echo "📍 Open browser to: http://localhost:${PORT}"
+echo "✅ Starting server on ${HOST}:${PORT}..."
+echo "📍 Open browser to: http://localhost:${PORT} or the forwarded public URL for your container"
 echo ""
 echo "To stop the server, press Ctrl+C"
 echo ""

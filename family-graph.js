@@ -22,7 +22,8 @@
  *     cold: 2 vouches
  */
 
-import { N_NODES, HALF_IDX, USER_N_INDEX } from '../lattice/janet-lattice.js';
+import { N_NODES, HALF_IDX, USER_N_INDEX } from './janet-lattice.js';
+import { reciprocal } from './lattice.js';
 import { RelationshipType, isValidRelType } from './family-taxonomy.js';
 
 export const RESERVED_BAND_START = 186;       // 6 * 31
@@ -142,4 +143,206 @@ export function assertMandates() {
     throw new Error('MANDATE FAIL: 7×31=217 factorisation broken');
   }
   if (6 * 31 !== FAMILY_SLOTS) throw new Error('MANDATE FAIL: family slot count mismatch');
+}
+
+function assertValidBand(band) {
+  if (!Number.isInteger(band) || band < 1 || band > 6) {
+    throw new RangeError(`band must be 1..6: ${band}`);
+  }
+}
+
+export class FamilyGraph {
+  constructor() {
+    this.nodes = new Map();
+    this.edges = [];
+    this.triads = [];
+  }
+
+  static fromJSON(data) {
+    const graph = new FamilyGraph();
+    if (data.nodes && Array.isArray(data.nodes)) {
+      for (const node of data.nodes) {
+        graph.nodes.set(node.id, { ...node });
+      }
+    }
+    if (data.edges && Array.isArray(data.edges)) {
+      graph.edges = data.edges.map(edge => ({ ...edge }));
+    }
+    if (data.triads && Array.isArray(data.triads)) {
+      graph.triads = data.triads.map(triad => ({ ...triad }));
+    }
+    return graph;
+  }
+
+  toJSON() {
+    return {
+      nodes: Array.from(this.nodes.values()),
+      edges: this.edges,
+      triads: this.triads,
+    };
+  }
+
+  createNode(id, band, relType, metadata = {}) {
+    if (!id || typeof id !== 'string') {
+      throw new TypeError('entityId must be a non-empty string');
+    }
+    assertValidBand(band);
+    if (!isValidRelType(relType)) {
+      throw new RangeError(`relType must be 1..31: ${relType}`);
+    }
+    if (this.nodes.has(id)) {
+      throw new Error(`Node already exists: ${id}`);
+    }
+    const node = {
+      id,
+      band,
+      relType,
+      metadata: { ...metadata },
+      createdAt: Date.now(),
+    };
+    this.nodes.set(id, node);
+    return node;
+  }
+
+  createEdge(sourceNodeId, targetNodeId, relType, metadata = {}) {
+    if (!this.nodes.has(sourceNodeId) || !this.nodes.has(targetNodeId)) {
+      throw new Error('Both source and target nodes must exist');
+    }
+    if (!isValidRelType(relType)) {
+      throw new RangeError(`relType must be 1..31: ${relType}`);
+    }
+    const edge = {
+      id: `${sourceNodeId}->${targetNodeId}:${relType}`,
+      source: sourceNodeId,
+      target: targetNodeId,
+      relType,
+      metadata: { ...metadata },
+      createdAt: Date.now(),
+    };
+    this.edges.push(edge);
+    return edge;
+  }
+
+  createTriadicLink(nodeAId, nodeBId, nodeCId) {
+    if (!this.nodes.has(nodeAId) || !this.nodes.has(nodeBId) || !this.nodes.has(nodeCId)) {
+      throw new Error('All three nodes must exist to create a triadic link');
+    }
+    const triad = {
+      nodeA: nodeAId,
+      nodeB: nodeBId,
+      nodeC: nodeCId,
+      createdAt: Date.now(),
+    };
+    this.triads.push(triad);
+    return triad;
+  }
+
+  queryNodes(filter = {}) {
+    const nodes = Array.from(this.nodes.values());
+    return nodes.filter((node) => {
+      if (filter.band !== undefined && node.band !== filter.band) return false;
+      if (filter.relType !== undefined && node.relType !== filter.relType) return false;
+      if (filter.tier !== undefined && bandTier(node.band) !== filter.tier) return false;
+      if (filter.component !== undefined) {
+        const component = node.relType <= 10 ? 'A' : node.relType <= 20 ? 'B' : 'C';
+        if (component !== filter.component) return false;
+      }
+      return true;
+    });
+  }
+
+  traverse(startNodeId, maxDepth = 3) {
+    if (!this.nodes.has(startNodeId)) {
+      throw new Error('Start node does not exist');
+    }
+    const visited = new Set([startNodeId]);
+    const queue = [{ nodeId: startNodeId, depth: 0 }];
+    const result = [];
+
+    while (queue.length > 0) {
+      const { nodeId, depth } = queue.shift();
+      result.push(this.nodes.get(nodeId));
+      if (depth >= maxDepth) continue;
+      for (const edge of this.edges) {
+        if (edge.source === nodeId && !visited.has(edge.target)) {
+          visited.add(edge.target);
+          queue.push({ nodeId: edge.target, depth: depth + 1 });
+        }
+      }
+    }
+    return result;
+  }
+
+  findPaths(sourceId, targetId, maxPathLength = 5) {
+    if (!this.nodes.has(sourceId) || !this.nodes.has(targetId)) {
+      throw new Error('Source and target nodes must exist');
+    }
+    const paths = [];
+    const stack = [[sourceId]];
+
+    while (stack.length > 0) {
+      const path = stack.pop();
+      const last = path[path.length - 1];
+      if (path.length > maxPathLength) continue;
+      if (last === targetId) {
+        paths.push(path);
+        continue;
+      }
+      for (const edge of this.edges) {
+        if (edge.source === last && !path.includes(edge.target)) {
+          stack.push([...path, edge.target]);
+        }
+      }
+    }
+    return paths;
+  }
+
+  verifyLatticeCompliance() {
+    const issues = [];
+    for (const node of this.nodes.values()) {
+      if (node.band < 1 || node.band > 6) {
+        issues.push({ node: node.id, reason: 'invalid_band', band: node.band });
+      }
+      if (!isValidRelType(node.relType)) {
+        issues.push({ node: node.id, reason: 'invalid_relType', relType: node.relType });
+      }
+    }
+    return {
+      compliant: issues.length === 0,
+      issues,
+      nodeCount: this.nodes.size,
+      edgeCount: this.edges.length,
+      triadCount: this.triads.length,
+    };
+  }
+}
+
+export function detectGaps(chatKey, userNodeData, presenceTable) {
+  const gaps = [];
+  if (!userNodeData || !Number.isInteger(userNodeData.relType)) {
+    return gaps;
+  }
+  const expectedReciprocal = reciprocal(userNodeData.relType);
+  Object.entries(presenceTable).forEach(([peerName, peerData]) => {
+    if (peerName === userNodeData.userName) return;
+    if (!peerData || !Number.isInteger(peerData.relType)) return;
+    if (peerData.relType === expectedReciprocal) return;
+    gaps.push({
+      peer: peerName,
+      peerRelType: peerData.relType,
+      expectedReciprocal,
+      message: `Peer ${peerName} has relType ${peerData.relType}, expected ${expectedReciprocal}`,
+    });
+  });
+  return gaps;
+}
+
+export function verifyTriadicClosure(graphData) {
+  if (!graphData || !graphData.triads) {
+    return { ok: false, missing: [] };
+  }
+  return {
+    ok: true,
+    triads: graphData.triads,
+  };
 }

@@ -1,10 +1,73 @@
 {
   "chats": {
-    "Yam": []
+    "Yam": [
+      {
+        "sender": "Tutu",
+        "text": "\u0001<.\u0001\u0002w\u001a9gW)\u001610",
+        "timestamp": 1781071604669,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "ENO",
+        "text": "\u0010\u0007\u0015N\u0018\u0016?p \\'\u0016u+5\r",
+        "timestamp": 1781071614403,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      }
+    ]
   },
   "wallets": {},
-  "presence": {},
-  "familyGraphs": {},
+  "presence": {
+    "Yam": {
+      "ENO": {
+        "relType": 1,
+        "label": "Parent",
+        "band": 1,
+        "timestamp": 1781071683572
+      },
+      "Tutu": {
+        "relType": 11,
+        "label": "Child",
+        "band": 1,
+        "timestamp": 1781071691582
+      }
+    }
+  },
+  "familyGraphs": {
+    "Yam": {
+      "nodes": [
+        {
+          "id": "user-ENO",
+          "band": 1,
+          "relType": 1,
+          "metadata": {
+            "userName": "ENO",
+            "nodeType": "PERSON",
+            "timestamp": 1781071570100
+          },
+          "createdAt": 1781071570101
+        },
+        {
+          "id": "user-Tutu",
+          "band": 1,
+          "relType": 11,
+          "metadata": {
+            "userName": "Tutu",
+            "nodeType": "PERSON",
+            "timestamp": 1781071598486
+          },
+          "createdAt": 1781071598486
+        }
+      ],
+      "edges": [],
+      "triads": []
+    }
+  },
   "triadicLinks": {},
   "latticeVerification": {
     "schemaVersion": "2.0",

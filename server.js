@@ -1,22 +1,26 @@
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
+import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 // Import family graph and lattice modules
-const { FamilyGraph, detectGaps, verifyTriadicClosure } = require('./family-graph');
-const { 
+import { FamilyGraph, detectGaps, verifyTriadicClosure } from './family-graph.js';
+import { 
   LATTICE_SIZE, BANDS, TYPES_PER_BAND, OCCUPIED_BANDS, PHASE_SHIFT, DELTA,
   REL_TYPES, REL_TYPE_NAMES, REL_TYPE_LABELS, REL_GROUPS,
   reciprocal, isReciprocal, recordIndex, janetN, latticeX, bandTier,
   vouchesRequired, validateCoordinate, describeNode, allNodes
-} = require('./janet-lattice');
-const { 
+} from './lattice.js';
+import { 
   ENTITY_TYPES, REL_PROPERTIES, getRelProperties, canCompose, 
   composeRelationships, isCompatible, getInverse 
-} = require('./family-taxonomy');
+} from './family-taxonomy.js';
 
 const PORT = Number.parseInt(process.env.PORT, 10) || 8080;
+const HOST = process.env.HOST || '0.0.0.0';
 const DB_FILE = path.join(__dirname, 'database.json');
 const MINT_INCREMENT = 0.9259;
 
@@ -534,9 +538,13 @@ app.get('/api/info', (req, res) => {
 // START SERVER
 // ============================================================================
 
-app.listen(PORT, () => {
-  console.log(`🚀 JANET Chat Server running on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
+  console.log(`🚀 JANET Chat Server running on http://${displayHost}:${PORT}`);
+  if (HOST === '0.0.0.0') {
+    console.log(`🌐 Bound to 0.0.0.0 for public/container access on port ${PORT}`);
+  }
   console.log(`📁 Database: ${DB_FILE}`);
   console.log(`📊 Lattice: ${LATTICE_SIZE}-node (${OCCUPIED_BANDS} bands × ${TYPES_PER_BAND} types)`);
-  console.log(`📚 API Docs: http://localhost:${PORT}/api/info`);
+  console.log(`📚 API Docs: http://${displayHost}:${PORT}/api/info`);
 });

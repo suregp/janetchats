@@ -60,6 +60,12 @@ export const REL_TYPE_LIST = Object.freeze(
     .map(([name, id]) => ({ id, name, label: humanize(name) }))
 );
 
+export const REL_TYPE_LABELS = Object.freeze(
+  Object.fromEntries(
+    REL_TYPE_LIST.map(({ id, label }) => [id, label])
+  )
+);
+
 function humanize(token) {
   return token.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -96,4 +102,107 @@ export function relTypeName(id) { return REL_TYPE_NAMES[id] || null; }
 export function relTypeLabel(id) {
   const n = relTypeName(id);
   return n ? humanize(n) : null;
+}
+
+export const ENTITY_TYPES = Object.freeze({
+  PERSON: 'PERSON',
+  HOUSEHOLD: 'HOUSEHOLD',
+  LINEAGE: 'LINEAGE',
+  ORG: 'ORG',
+  COMMUNITY: 'COMMUNITY',
+  INSTITUTION: 'INSTITUTION',
+});
+
+const RELATIONSHIP_INVERSES = {
+  1: 8,   // ADOPTIVE_CHILD ↔ ADOPTIVE_PARENT
+  2: 11,  // PARENT ↔ CHILD
+  3: 12,  // GRANDPARENT ↔ GRANDCHILD
+  4: 13,  // GREAT_GRANDPARENT ↔ GREAT_GRANDCHILD
+  5: 14,  // GREAT2_GRANDPARENT ↔ GREAT2_GRANDCHILD
+  6: 15,  // GREAT3_GRANDPARENT ↔ GREAT3_GRANDCHILD
+  7: 16,  // STEP_PARENT ↔ STEP_CHILD
+  8: 1,   // ADOPTIVE_PARENT ↔ ADOPTIVE_CHILD
+  9: 17,  // FOSTER_PARENT ↔ FOSTER_CHILD
+  10: 18, // GUARDIAN ↔ WARD
+  11: 2,
+  12: 3,
+  13: 4,
+  14: 5,
+  15: 6,
+  16: 7,
+  17: 9,
+  18: 10,
+  19: 20, // GODCHILD ↔ GODPARENT
+  20: 19,
+  21: 21, // SIBLING ↔ SIBLING
+  22: 22, // HALF_SIBLING ↔ HALF_SIBLING
+  23: 23, // STEP_SIBLING ↔ STEP_SIBLING
+  24: 24, // COUSIN_FIRST ↔ COUSIN_FIRST
+  25: 25, // COUSIN_SECOND ↔ COUSIN_SECOND
+  26: 26, // COUSIN_REMOVED ↔ COUSIN_REMOVED
+  27: 28, // AUNT_UNCLE ↔ NIECE_NEPHEW
+  28: 27,
+  29: 29, // GRAND_NIECE_NEPHEW ↔ GRAND_NIECE_NEPHEW
+  30: 31, // PARENT_IN_LAW ↔ SIBLING_IN_LAW (simplified)
+  31: 30,
+};
+
+const COMPOSITION_TABLE = Object.freeze({
+  2: { // PARENT
+    21: 27, // Parent ∘ Sibling = Aunt/Uncle
+    11: 3,  // Parent ∘ Child = Grandparent
+    24: 26, // Parent ∘ Cousin First = Cousin Removed
+  },
+  7: { // STEP_PARENT
+    21: 23, // Step-parent ∘ Sibling = Step-sibling
+  },
+  21: { // SIBLING
+    11: 28, // Sibling ∘ Child = Niece/Nephew
+    7: 23,  // Sibling ∘ Step-parent = Step-sibling
+  },
+  26: { // COUSIN_FIRST
+    11: 29, // Cousin First ∘ Child = Grand Niece/Nephew
+  },
+});
+
+export const REL_PROPERTIES = Object.freeze(
+  Object.fromEntries(
+    REL_TYPE_LIST.map(({ id, name, label }) => {
+      const property = {
+        id,
+        name,
+        label,
+        category: categoryOf(id),
+        component: id <= 10 ? 'A' : id <= 20 ? 'B' : 'C',
+        inverse: RELATIONSHIP_INVERSES[id] || null,
+        inverseLabel: REL_TYPE_LABELS[RELATIONSHIP_INVERSES[id]] || null,
+        symmetry: [21, 22, 23, 24, 25, 26, 29, 30, 31].includes(id),
+      };
+      return [id, property];
+    })
+  )
+);
+
+export function getRelProperties(relType) {
+  return REL_PROPERTIES[relType] || null;
+}
+
+export function getInverse(relType) {
+  if (!isValidRelType(relType)) return null;
+  return RELATIONSHIP_INVERSES[relType] || null;
+}
+
+export function canCompose(relType1, relType2) {
+  return Boolean(
+    COMPOSITION_TABLE[relType1] && COMPOSITION_TABLE[relType1][relType2]
+  );
+}
+
+export function composeRelationships(relType1, relType2) {
+  if (!canCompose(relType1, relType2)) return null;
+  return COMPOSITION_TABLE[relType1][relType2];
+}
+
+export function isCompatible(relType1, relType2) {
+  return isValidRelType(relType1) && isValidRelType(relType2);
 }

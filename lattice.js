@@ -182,3 +182,10 @@ function allNodes() {
   }
   return nodes;
 }
+
+export {
+  LATTICE_SIZE, BANDS, TYPES_PER_BAND, OCCUPIED_BANDS, PHASE_SHIFT, DELTA,
+  REL_TYPES, REL_TYPE_NAMES, REL_TYPE_LABELS, REL_GROUPS,
+  reciprocal, isReciprocal, recordIndex, janetN, latticeX, bandTier,
+  vouchesRequired, validateCoordinate, describeNode, allNodes
+};

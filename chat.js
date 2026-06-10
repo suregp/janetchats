@@ -1,3 +1,5 @@
+import { REL_TYPE_LABELS } from './lattice.js';
+
 let chatKey = "";
 let secretKey = "";
 let userName = "";
@@ -514,3 +516,9 @@ function initializeFamilyGraph() {
     addUserToGraph();
     checkLatticeCompliance();
 }
+
+// Expose inline event handlers for module usage
+window.uiGenerateSecret = uiGenerateSecret;
+window.startChat = startChat;
+window.mutateFamilyStructure = mutateFamilyStructure;
+window.sendMsg = sendMsg;
