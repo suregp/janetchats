@@ -82,10 +82,72 @@
           "relType": 1
         }
       }
+    ],
+    "Dapp": [
+      {
+        "sender": "Suk",
+        "text": "\u0015/;nw-:",
+        "timestamp": 1781075682801,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "ENO2",
+        "text": "\u0003\u0014\u001ffmE\u0006",
+        "timestamp": 1781075714348,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      },
+      {
+        "sender": "Suk",
+        "text": "\u0015/;nw-:",
+        "timestamp": 1781076139354,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      }
+    ],
+    "House": [
+      {
+        "sender": "Sikira",
+        "text": "\u0016]\\8KVjJ\u000e^",
+        "timestamp": 1781077721606,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "Doctor",
+        "text": "\u0001[T%VEjJ\u000eR\u00028)[\u00175\\V\"Dfz\u0017t!QV#\u0019X>\u000f",
+        "timestamp": 1781077735265,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      },
+      {
+        "sender": "Sikira",
+        "text": "\u0016]\\8KVjJ\u000eR\u0017",
+        "timestamp": 1781077760791,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      }
     ]
   },
   "wallets": {
-    "test-room_Alice": 0.9259
+    "test-room_Alice": 0.9259,
+    "Yam_Tugo": 130.5519,
+    "Show_Gu": 15.7403,
+    "Show_Ruga": 48.1468,
+    "House_Dudu": 77.7756
   },
   "presence": {
     "test-room": {
@@ -97,17 +159,59 @@
       }
     },
     "Yam": {
-      "ENO": {
-        "relType": 1,
-        "label": "Parent",
-        "band": 1,
-        "timestamp": 1781075332520
-      },
       "Don": {
         "relType": 11,
         "label": "Child",
         "band": 1,
-        "timestamp": 1781075319521
+        "timestamp": 1781075612673
+      },
+      "ENO": {
+        "relType": 1,
+        "label": "Parent",
+        "band": 1,
+        "timestamp": 1781077500648
+      },
+      "Tugo": {
+        "relType": 11,
+        "label": "Child",
+        "band": 1,
+        "timestamp": 1781077500641
+      }
+    },
+    "Dapp": {
+      "ENO2": {
+        "relType": 1,
+        "label": "Parent",
+        "band": 1,
+        "timestamp": 1781077377758
+      }
+    },
+    "House": {
+      "Sikira": {
+        "relType": 11,
+        "label": "Child",
+        "band": 1,
+        "timestamp": 1781077764158
+      },
+      "Dudu": {
+        "relType": 2,
+        "label": "Grandparent",
+        "band": 1,
+        "timestamp": 1781077958518
+      }
+    },
+    "Show": {
+      "Ruga": {
+        "relType": 1,
+        "label": "Parent",
+        "band": 1,
+        "timestamp": 1781077898528
+      },
+      "Gu": {
+        "relType": 1,
+        "label": "Parent",
+        "band": 1,
+        "timestamp": 1781077855670
       }
     }
   },
@@ -157,6 +261,112 @@
             "timestamp": 1781075248985
           },
           "createdAt": 1781075248985
+        },
+        {
+          "id": "user-Tugo",
+          "band": 1,
+          "relType": 11,
+          "metadata": {
+            "userName": "Tugo",
+            "nodeType": "PERSON",
+            "timestamp": 1781077422939
+          },
+          "createdAt": 1781077422939
+        }
+      ],
+      "edges": [],
+      "triads": []
+    },
+    "Dapp": {
+      "nodes": [
+        {
+          "id": "user-ENO2",
+          "band": 1,
+          "relType": 1,
+          "metadata": {
+            "userName": "ENO2",
+            "nodeType": "PERSON",
+            "timestamp": 1781075649488
+          },
+          "createdAt": 1781075649488
+        },
+        {
+          "id": "user-Suk",
+          "band": 1,
+          "relType": 11,
+          "metadata": {
+            "userName": "Suk",
+            "nodeType": "PERSON",
+            "timestamp": 1781075671927
+          },
+          "createdAt": 1781075671927
+        }
+      ],
+      "edges": [],
+      "triads": []
+    },
+    "House": {
+      "nodes": [
+        {
+          "id": "user-Doctor",
+          "band": 1,
+          "relType": 1,
+          "metadata": {
+            "userName": "Doctor",
+            "nodeType": "PERSON",
+            "timestamp": 1781077683220
+          },
+          "createdAt": 1781077683220
+        },
+        {
+          "id": "user-Sikira",
+          "band": 1,
+          "relType": 11,
+          "metadata": {
+            "userName": "Sikira",
+            "nodeType": "PERSON",
+            "timestamp": 1781077717867
+          },
+          "createdAt": 1781077717867
+        },
+        {
+          "id": "user-Dudu",
+          "band": 1,
+          "relType": 2,
+          "metadata": {
+            "userName": "Dudu",
+            "nodeType": "PERSON",
+            "timestamp": 1781077885268
+          },
+          "createdAt": 1781077885268
+        }
+      ],
+      "edges": [],
+      "triads": []
+    },
+    "Show": {
+      "nodes": [
+        {
+          "id": "user-Ruga",
+          "band": 1,
+          "relType": 1,
+          "metadata": {
+            "userName": "Ruga",
+            "nodeType": "PERSON",
+            "timestamp": 1781077806568
+          },
+          "createdAt": 1781077806568
+        },
+        {
+          "id": "user-Gu",
+          "band": 1,
+          "relType": 1,
+          "metadata": {
+            "userName": "Gu",
+            "nodeType": "PERSON",
+            "timestamp": 1781077844893
+          },
+          "createdAt": 1781077844893
         }
       ],
       "edges": [],
@@ -182,19 +392,73 @@
         "amount": 0.9259,
         "newBalance": 0.9259
       }
+    },
+    "Yam": {
+      "halted": true,
+      "reason": "structural_reciprocity_violation",
+      "gaps": [
+        {
+          "peer": "Don",
+          "peerRelType": 11,
+          "expectedReciprocal": 1,
+          "message": "Peer Don has relType 11, expected 1"
+        }
+      ],
+      "haltedAt": 1781077500619,
+      "lastMint": {
+        "userName": "Tugo",
+        "amount": 0.9259,
+        "newBalance": 130.5519
+      }
+    },
+    "Show": {
+      "halted": true,
+      "reason": "structural_reciprocity_violation",
+      "gaps": [
+        {
+          "peer": "Gu",
+          "peerRelType": 1,
+          "expectedReciprocal": 11,
+          "message": "Peer Gu has relType 1, expected 11"
+        }
+      ],
+      "haltedAt": 1781077898513,
+      "lastMint": {
+        "userName": "Ruga",
+        "amount": 0.9259,
+        "newBalance": 48.1468
+      }
+    },
+    "House": {
+      "halted": true,
+      "reason": "structural_reciprocity_violation",
+      "gaps": [
+        {
+          "peer": "Sikira",
+          "peerRelType": 11,
+          "expectedReciprocal": 12,
+          "message": "Peer Sikira has relType 11, expected 12"
+        }
+      ],
+      "haltedAt": 1781077958534,
+      "lastMint": {
+        "userName": "Dudu",
+        "amount": 0.9259,
+        "newBalance": 77.7756
+      }
     }
   },
   "adaptiveModel": {
     "global": {
-      "updatedAt": 1781075493071,
+      "updatedAt": 1781078313187,
       "relationCounts": {
-        "1": 5,
-        "11": 4
+        "1": 7,
+        "11": 8
       },
       "bandCounts": {
-        "1": 9
+        "1": 15
       },
-      "totalMessages": 9
+      "totalMessages": 15
     }
   }
 }
