@@ -221,8 +221,8 @@
     "The Good Boy's Club_Jola": 481.468,
     "The Good Boy's Club_Jeff": 174.0692,
     "The Good Boy's Club_ENO": 70.3684,
-    "Jay Club_Funke": 32.4065,
-    "Jay Club_Joy": 31.4806
+    "Jay Club_Funke": 85.1828,
+    "Jay Club_Joy": 84.2569
   },
   "presence": {
     "test-room": {
@@ -334,13 +334,13 @@
         "relType": 1,
         "label": "Parent",
         "band": 1,
-        "timestamp": 1781101919109
+        "timestamp": 1781102056422
       },
       "Funke": {
         "relType": 2,
         "label": "Grandparent",
         "band": 1,
-        "timestamp": 1781101919113
+        "timestamp": 1781102056432
       }
     }
   },
@@ -767,23 +767,24 @@
           "message": "Peer Joy has relType 1, expected 12"
         }
       ],
-      "haltedAt": 1781101919102,
+      "haltedAt": 1781102056170,
       "lastMint": {
         "userName": "Funke",
         "amount": 0.9259,
-        "newBalance": 32.4065
+        "newBalance": 85.1828
       }
     }
   },
   "adaptiveModel": {
     "global": {
-      "updatedAt": 1781101892620,
+      "updatedAt": 1781102072628,
       "relationCounts": {
         "1": 10,
+        "2": 1,
         "11": 12
       },
       "bandCounts": {
-        "1": 22
+        "1": 23
       },
       "totalMessages": 22
     }
