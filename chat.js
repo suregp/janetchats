@@ -234,7 +234,12 @@ function verifyMatrixReciprocity() {
 
         if (dynamicConflicts.length > 0) {
             isMatrixLocked = true;
-            conflictBanner.innerHTML = dynamicConflicts.join('<br><br>');
+            let bannerHtml = '';
+            if (data.halted) {
+                bannerHtml += `<div><strong>CHAT HALTED BY SERVER:</strong> ${data.haltedReason || data.halted || 'structural violation detected'}</div><hr>`;
+            }
+            bannerHtml += dynamicConflicts.join('<br><br>');
+            conflictBanner.innerHTML = bannerHtml;
             conflictBanner.classList.remove('hidden');
             msgInput.disabled = true;
             sendBtn.disabled = true;
@@ -242,9 +247,13 @@ function verifyMatrixReciprocity() {
 
             if (!activeConflictDetected) {
                 activeConflictDetected = true;
-                // If server already performed the authoritative mint, just refresh the wallet.
+                // If server performed the authoritative mint, show a notification and refresh the wallet.
                 if (data.minted && data.minted.newBalance !== undefined) {
                     refreshWalletDisplay();
+                    const mintLog = document.getElementById('mint-notification-log');
+                    mintLog.innerHTML = `💎 <strong>MINT (SERVER):</strong> +${(data.minted.amount || MINT_INCREMENT)} Units credited. New balance: ${data.minted.newBalance.toFixed(4)}.`;
+                    mintLog.classList.remove('hidden');
+                    setTimeout(() => { mintLog.classList.add('hidden'); }, 6000);
                 } else {
                     executeTokenMint("Structural reciprocity violation incurred between active network nodes.");
                 }

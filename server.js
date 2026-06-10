@@ -376,7 +376,8 @@ app.post('/api/gap-detection', (req, res) => {
     saveDatabase(db);
 
     result.halted = true;
-    result.minted = { amount: MINT_INCREMENT, newBalance };
+    result.haltedReason = db.latticeVerification[chatKey].reason || 'structural_reciprocity_violation';
+    // include minted details
   }
 
   res.json(result);
