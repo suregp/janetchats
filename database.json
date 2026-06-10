@@ -196,7 +196,9 @@
     "Show_Ruga": 48.1468,
     "House_Dudu": 77.7756,
     "Daddy Place_Din": 105.5526,
-    "Daddy Place_Ruii": 751.8308
+    "Daddy Place_Ruii": 751.8308,
+    "The Good Boy's Club_Scumpus": 349.9902,
+    "The Good Boy's Club_Jola": 358.3233
   },
   "presence": {
     "test-room": {
@@ -281,6 +283,20 @@
         "label": "Aunt / Uncle",
         "band": 1,
         "timestamp": 1781099829195
+      }
+    },
+    "The Good Boy's Club": {
+      "Jola": {
+        "relType": 28,
+        "label": "Domestic partner",
+        "band": 3,
+        "timestamp": 1781101360018
+      },
+      "Scumpus": {
+        "relType": 29,
+        "label": "Companion",
+        "band": 3,
+        "timestamp": 1781101360025
       }
     }
   },
@@ -479,6 +495,34 @@
       ],
       "edges": [],
       "triads": []
+    },
+    "The Good Boy's Club": {
+      "nodes": [
+        {
+          "id": "user-Jola",
+          "band": 3,
+          "relType": 28,
+          "metadata": {
+            "userName": "Jola",
+            "nodeType": "PERSON",
+            "timestamp": 1781101064953
+          },
+          "createdAt": 1781101064953
+        },
+        {
+          "id": "user-Scumpus",
+          "band": 3,
+          "relType": 29,
+          "metadata": {
+            "userName": "Scumpus",
+            "nodeType": "PERSON",
+            "timestamp": 1781101132978
+          },
+          "createdAt": 1781101132978
+        }
+      ],
+      "edges": [],
+      "triads": []
     }
   },
   "triadicLinks": {},
@@ -582,11 +626,31 @@
         "amount": 0.9259,
         "newBalance": 751.8308
       }
+    },
+    "The Good Boy's Club": {
+      "halted": true,
+      "reason": "structural_reciprocity_violation",
+      "gaps": [
+        {
+          "peer": "Scumpus",
+          "peerLabel": "Companion",
+          "peerRelType": 29,
+          "expectedReciprocal": 28,
+          "userLabel": "Domestic partner",
+          "message": "Peer Scumpus has relType 29, expected 28"
+        }
+      ],
+      "haltedAt": 1781101360014,
+      "lastMint": {
+        "userName": "Jola",
+        "amount": 0.9259,
+        "newBalance": 358.3233
+      }
     }
   },
   "adaptiveModel": {
     "global": {
-      "updatedAt": 1781100632572,
+      "updatedAt": 1781101352610,
       "relationCounts": {
         "1": 9,
         "11": 11
