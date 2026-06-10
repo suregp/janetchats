@@ -140,6 +140,53 @@
           "relType": 11
         }
       }
+    ],
+    "Daddy Place": [
+      {
+        "sender": "Din",
+        "text": "5Y8[L\n6+",
+        "timestamp": 1781098540758,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      },
+      {
+        "sender": "Cookey",
+        "text": "2_9\n\t;ir;\u00198\u000eQ_=A\b#76\u000b",
+        "timestamp": 1781098596734,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "Cookey",
+        "text": "2_9\n\t;ir:Ny\u0016QT9\b\u0002%s<\u0013",
+        "timestamp": 1781098606666,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "Cookey",
+        "text": "2_9\n\t;ir:V.C\u0004\u00100\u0004\t.:<\u0015\u0019𩉡𣈶𪹧𤥖",
+        "timestamp": 1781098617121,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "Din",
+        "text": "5Y8[L\u0005!7\u0013My\u0005",
+        "timestamp": 1781098628198,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      }
     ]
   },
   "wallets": {
@@ -147,7 +194,9 @@
     "Yam_Tugo": 130.5519,
     "Show_Gu": 15.7403,
     "Show_Ruga": 48.1468,
-    "House_Dudu": 77.7756
+    "House_Dudu": 77.7756,
+    "Daddy Place_Din": 105.5526,
+    "Daddy Place_Ruii": 751.8308
   },
   "presence": {
     "test-room": {
@@ -212,6 +261,26 @@
         "label": "Parent",
         "band": 1,
         "timestamp": 1781077855670
+      }
+    },
+    "Daddy Place": {
+      "Din": {
+        "relType": 1,
+        "label": "Parent",
+        "band": 1,
+        "timestamp": 1781099244204
+      },
+      "Cookey": {
+        "relType": 11,
+        "label": "Child",
+        "band": 1,
+        "timestamp": 1781099069554
+      },
+      "Ruii": {
+        "relType": 5,
+        "label": "Aunt / Uncle",
+        "band": 1,
+        "timestamp": 1781099829195
       }
     }
   },
@@ -371,6 +440,45 @@
       ],
       "edges": [],
       "triads": []
+    },
+    "Daddy Place": {
+      "nodes": [
+        {
+          "id": "user-Din",
+          "band": 1,
+          "relType": 1,
+          "metadata": {
+            "userName": "Din",
+            "nodeType": "PERSON",
+            "timestamp": 1781098530409
+          },
+          "createdAt": 1781098530409
+        },
+        {
+          "id": "user-Cookey",
+          "band": 1,
+          "relType": 11,
+          "metadata": {
+            "userName": "Cookey",
+            "nodeType": "PERSON",
+            "timestamp": 1781098567786
+          },
+          "createdAt": 1781098567786
+        },
+        {
+          "id": "user-Ruii",
+          "band": 1,
+          "relType": 5,
+          "metadata": {
+            "userName": "Ruii",
+            "nodeType": "PERSON",
+            "timestamp": 1781099143118
+          },
+          "createdAt": 1781099143118
+        }
+      ],
+      "edges": [],
+      "triads": []
     }
   },
   "triadicLinks": {},
@@ -446,19 +554,47 @@
         "amount": 0.9259,
         "newBalance": 77.7756
       }
+    },
+    "Daddy Place": {
+      "halted": true,
+      "reason": "structural_reciprocity_violation",
+      "gaps": [
+        {
+          "peer": "Din",
+          "peerLabel": "Parent",
+          "peerRelType": 1,
+          "expectedReciprocal": 15,
+          "userLabel": "Aunt / Uncle",
+          "message": "Peer Din has relType 1, expected 15"
+        },
+        {
+          "peer": "Cookey",
+          "peerLabel": "Child",
+          "peerRelType": 11,
+          "expectedReciprocal": 15,
+          "userLabel": "Aunt / Uncle",
+          "message": "Peer Cookey has relType 11, expected 15"
+        }
+      ],
+      "haltedAt": 1781099829159,
+      "lastMint": {
+        "userName": "Ruii",
+        "amount": 0.9259,
+        "newBalance": 751.8308
+      }
     }
   },
   "adaptiveModel": {
     "global": {
-      "updatedAt": 1781078313187,
+      "updatedAt": 1781100452565,
       "relationCounts": {
-        "1": 7,
-        "11": 8
+        "1": 9,
+        "11": 11
       },
       "bandCounts": {
-        "1": 15
+        "1": 20
       },
-      "totalMessages": 15
+      "totalMessages": 20
     }
   }
 }
