@@ -197,8 +197,8 @@
     "House_Dudu": 77.7756,
     "Daddy Place_Din": 105.5526,
     "Daddy Place_Ruii": 751.8308,
-    "The Good Boy's Club_Scumpus": 349.9902,
-    "The Good Boy's Club_Jola": 358.3233
+    "The Good Boy's Club_Scumpus": 373.1377,
+    "The Good Boy's Club_Jola": 381.4708
   },
   "presence": {
     "test-room": {
@@ -290,13 +290,13 @@
         "relType": 28,
         "label": "Domestic partner",
         "band": 3,
-        "timestamp": 1781101360018
+        "timestamp": 1781101385006
       },
       "Scumpus": {
         "relType": 29,
         "label": "Companion",
         "band": 3,
-        "timestamp": 1781101360025
+        "timestamp": 1781101385013
       }
     }
   },
@@ -640,11 +640,11 @@
           "message": "Peer Scumpus has relType 29, expected 28"
         }
       ],
-      "haltedAt": 1781101360014,
+      "haltedAt": 1781101385017,
       "lastMint": {
         "userName": "Jola",
         "amount": 0.9259,
-        "newBalance": 358.3233
+        "newBalance": 381.4708
       }
     }
   },
