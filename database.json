@@ -1,5 +1,89 @@
 {
-  "chats": {},
+  "chats": {
+    "Yam": [
+      {
+        "sender": "James",
+        "text": "#R\u000b&\u001f^h>\fD*(\r",
+        "timestamp": 1781074619244,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "ENO",
+        "text": ",})yL,-\u000fE\u0006!0I[\t4L\u0011h\u0012\n\r .",
+        "timestamp": 1781074631122,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      },
+      {
+        "sender": "James",
+        "text": "#R\u000b&\u001f^h>",
+        "timestamp": 1781074646453,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "ENO",
+        "text": ",})yL,!",
+        "timestamp": 1781074664555,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      },
+      {
+        "sender": "ENO",
+        "text": ",})yL,",
+        "timestamp": 1781075005479,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      },
+      {
+        "sender": "John",
+        "text": "#\u001e.\u0017WX;P",
+        "timestamp": 1781075094884,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "ENO",
+        "text": ",?\tCM6\u001aZ7",
+        "timestamp": 1781075102043,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      },
+      {
+        "sender": "Don",
+        "text": "\"\b,m\u0016\u0005\u001d",
+        "timestamp": 1781075252805,
+        "lattice": {
+          "band": 1,
+          "relType": 11
+        }
+      },
+      {
+        "sender": "ENO",
+        "text": "#)\rm\u0016\u0005\u0011! +",
+        "timestamp": 1781075259798,
+        "lattice": {
+          "band": 1,
+          "relType": 1
+        }
+      }
+    ]
+  },
   "wallets": {
     "test-room_Alice": 0.9259
   },
@@ -11,9 +95,74 @@
         "band": 1,
         "timestamp": 1781074349350
       }
+    },
+    "Yam": {
+      "ENO": {
+        "relType": 1,
+        "label": "Parent",
+        "band": 1,
+        "timestamp": 1781075332520
+      },
+      "Don": {
+        "relType": 11,
+        "label": "Child",
+        "band": 1,
+        "timestamp": 1781075319521
+      }
     }
   },
-  "familyGraphs": {},
+  "familyGraphs": {
+    "Yam": {
+      "nodes": [
+        {
+          "id": "user-ENO",
+          "band": 1,
+          "relType": 1,
+          "metadata": {
+            "userName": "ENO",
+            "nodeType": "PERSON",
+            "timestamp": 1781074588482
+          },
+          "createdAt": 1781074588482
+        },
+        {
+          "id": "user-James",
+          "band": 1,
+          "relType": 11,
+          "metadata": {
+            "userName": "James",
+            "nodeType": "PERSON",
+            "timestamp": 1781074612534
+          },
+          "createdAt": 1781074612534
+        },
+        {
+          "id": "user-John",
+          "band": 1,
+          "relType": 11,
+          "metadata": {
+            "userName": "John",
+            "nodeType": "PERSON",
+            "timestamp": 1781075091144
+          },
+          "createdAt": 1781075091144
+        },
+        {
+          "id": "user-Don",
+          "band": 1,
+          "relType": 11,
+          "metadata": {
+            "userName": "Don",
+            "nodeType": "PERSON",
+            "timestamp": 1781075248985
+          },
+          "createdAt": 1781075248985
+        }
+      ],
+      "edges": [],
+      "triads": []
+    }
+  },
   "triadicLinks": {},
   "latticeVerification": {
     "test-room": {
@@ -33,6 +182,19 @@
         "amount": 0.9259,
         "newBalance": 0.9259
       }
+    }
+  },
+  "adaptiveModel": {
+    "global": {
+      "updatedAt": 1781075493071,
+      "relationCounts": {
+        "1": 5,
+        "11": 4
+      },
+      "bandCounts": {
+        "1": 9
+      },
+      "totalMessages": 9
     }
   }
 }
